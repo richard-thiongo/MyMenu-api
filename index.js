@@ -12,8 +12,30 @@ const uploadRoutes = require('./upload/uploadRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(helmet());
+// Configure CORS before Helmet so headers aren't overridden
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow all origins in dev; in production lock this down via ALLOWED_ORIGINS env var
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+      : ['*'];
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+// Helmet — disable crossOriginResourcePolicy so it doesn't block cross-origin reads
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(express.json({ limit: '10kb' }));
 app.use(
   rateLimit({

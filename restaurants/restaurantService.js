@@ -151,6 +151,15 @@ async function submitPayment(restaurantId, paymentMessage) {
     throw new AppError('Email service is not configured properly', 500);
   }
 
+  // Generate a secure, signed admin approval token (expires in 7 days)
+  const adminToken = jwt.sign(
+    { restaurantId, restaurantName: profile.restaurant_name, paymentMessage },
+    process.env.ADMIN_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  const approvalUrl = `${process.env.FRONTEND_URL}/admin/verify?token=${adminToken}`;
+
   const { Resend } = require('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -158,14 +167,23 @@ async function submitPayment(restaurantId, paymentMessage) {
     await resend.emails.send({
       from: 'MyMenu <onboarding@resend.dev>',
       to: process.env.ADMIN_EMAIL,
-      subject: `Payment Verification: ${profile.restaurant_name}`,
+      subject: `💳 Payment Verification: ${profile.restaurant_name}`,
       html: `
-        <h2>New Payment Submission</h2>
-        <p><strong>Restaurant:</strong> ${profile.restaurant_name}</p>
-        <p><strong>Restaurant ID:</strong> ${restaurantId}</p>
-        <p><strong>Message / Code:</strong></p>
-        <pre style="background: #f4f4f4; padding: 10px; border-radius: 5px;">${paymentMessage}</pre>
-        <p><em>Please verify this payment and update their subscription status in the database.</em></p>
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 10px;">
+          <h2 style="color: #333;">New Payment Submission</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr><td style="padding: 8px; font-weight: bold; color: #555;">Restaurant:</td><td style="padding: 8px;">${profile.restaurant_name}</td></tr>
+            <tr style="background:#f0f0f0;"><td style="padding: 8px; font-weight: bold; color: #555;">Restaurant ID:</td><td style="padding: 8px;">${restaurantId}</td></tr>
+          </table>
+          <h3 style="color: #333;">Payment Message / Code:</h3>
+          <pre style="background: #e8e8e8; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-break: break-all;">${paymentMessage}</pre>
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${approvalUrl}" style="background: #16a34a; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: bold;">
+              ✅ Review &amp; Approve Payment
+            </a>
+          </div>
+          <p style="color: #999; font-size: 12px; margin-top: 20px; text-align: center;">This link expires in 7 days.</p>
+        </div>
       `
     });
   } catch (error) {
@@ -173,4 +191,46 @@ async function submitPayment(restaurantId, paymentMessage) {
   }
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken, submitPayment };
+async function getPaymentDetails(token) {
+  try {
+    const payload = jwt.verify(token, process.env.ADMIN_SECRET);
+    return {
+      restaurantId: payload.restaurantId,
+      restaurantName: payload.restaurantName,
+      paymentMessage: payload.paymentMessage,
+    };
+  } catch (err) {
+    throw new AppError('Invalid or expired approval link', 401);
+  }
+}
+
+async function approvePayment(token) {
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.ADMIN_SECRET);
+  } catch (err) {
+    throw new AppError('Invalid or expired approval link', 401);
+  }
+
+  const { restaurantId, restaurantName } = payload;
+
+  const result = await pool.query(
+    `UPDATE restaurants
+     SET is_paid = true, subscription_expires_at = NOW() + INTERVAL '31 days'
+     WHERE restaurant_id = $1
+     RETURNING restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at`,
+    [restaurantId]
+  );
+
+  if (result.rowCount === 0) {
+    throw new AppError('Restaurant not found', 404);
+  }
+
+  // Immediately update the cache so the public menu goes live instantly
+  cacheService.updateProfile(restaurantId, result.rows[0]);
+
+  return result.rows[0];
+}
+
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
+

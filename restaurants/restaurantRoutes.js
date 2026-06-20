@@ -43,4 +43,8 @@ router.post(
   restaurantController.submitPayment
 );
 
+// Admin routes (secured by the signed token itself — no auth middleware needed)
+router.get('/admin/payment-details', restaurantController.getPaymentDetails);
+router.post('/admin/approve-payment', restaurantController.approvePayment);
+
 module.exports = router;

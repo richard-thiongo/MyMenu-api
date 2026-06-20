@@ -71,4 +71,27 @@ async function submitPayment(req, res, next) {
   }
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken, submitPayment };
+async function getPaymentDetails(req, res, next) {
+  try {
+    const { token } = req.query;
+    if (!token) throw new (require('../shared/AppError'))('Token is required', 400);
+    const details = await restaurantService.getPaymentDetails(token);
+    res.status(200).json({ message: 'Payment details retrieved', data: details });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function approvePayment(req, res, next) {
+  try {
+    const { token } = req.body;
+    if (!token) throw new (require('../shared/AppError'))('Token is required', 400);
+    const restaurant = await restaurantService.approvePayment(token);
+    res.status(200).json({ message: 'Payment approved and subscription activated!', data: restaurant });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
+

@@ -19,5 +19,8 @@ const resetPasswordSchema = Joi.object({
   restaurant_name: Joi.string().trim().min(2).max(255).required(),
   new_password: Joi.string().min(8).max(128).required(),
 });
+const refreshTokenSchema = Joi.object({
+  refreshToken: Joi.string().required(),
+});
 
-module.exports = { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema };
+module.exports = { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema, refreshTokenSchema };

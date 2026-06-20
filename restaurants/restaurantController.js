@@ -49,5 +49,16 @@ async function resetPassword(req, res, next) {
     next(error);
   }
 }
+async function refreshAccessToken(req, res, next) {
+  try {
+    const result = await restaurantService.refreshAccessToken(req.body.refreshToken);
+    res.status(200).json({
+      message: 'Token refreshed',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword };
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken };

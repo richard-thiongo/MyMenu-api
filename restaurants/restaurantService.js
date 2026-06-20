@@ -46,11 +46,18 @@ async function signin({ restaurant_name, password }) {
   const token = jwt.sign(
     { restaurantId: restaurant.restaurant_id },
     process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  const refreshToken = jwt.sign(
+    { restaurantId: restaurant.restaurant_id },
+    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh',
     { expiresIn: '7d' }
   );
 
   return {
     token,
+    refreshToken,
     restaurant: {
       restaurant_id: restaurant.restaurant_id,
       restaurant_name: restaurant.restaurant_name,
@@ -94,5 +101,39 @@ async function resetPassword({ restaurant_name, new_password }) {
     throw new AppError('Restaurant not found', 404);
   }
 }
+async function refreshAccessToken(refreshTokenStr) {
+  try {
+    const payload = jwt.verify(
+      refreshTokenStr,
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh'
+    );
+    
+    const restaurantId = payload.restaurantId;
+    const result = await pool.query(
+      'SELECT restaurant_id FROM restaurants WHERE restaurant_id = $1',
+      [restaurantId]
+    );
+    
+    if (result.rowCount === 0) {
+      throw new AppError('Invalid token', 401);
+    }
+    
+    const newToken = jwt.sign(
+      { restaurantId },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    
+    const newRefreshToken = jwt.sign(
+      { restaurantId },
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh',
+      { expiresIn: '7d' }
+    );
+    
+    return { token: newToken, refreshToken: newRefreshToken };
+  } catch (err) {
+    throw new AppError('Invalid or expired refresh token', 401);
+  }
+}
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword };
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken };

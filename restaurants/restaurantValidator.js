@@ -22,5 +22,8 @@ const resetPasswordSchema = Joi.object({
 const refreshTokenSchema = Joi.object({
   refreshToken: Joi.string().required(),
 });
+const paymentSchema = Joi.object({
+  paymentMessage: Joi.string().trim().required(),
+});
 
-module.exports = { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema, refreshTokenSchema };
+module.exports = { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema, refreshTokenSchema, paymentSchema };

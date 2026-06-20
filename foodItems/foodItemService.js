@@ -106,6 +106,13 @@ async function getFoodItemsByRestaurantName(restaurantName) {
     throw new AppError('Resource not found', 404);
   }
 
+  const { is_paid, subscription_expires_at } = cacheData.profile;
+  const isExpired = !subscription_expires_at || new Date(subscription_expires_at) < new Date();
+  
+  if (!is_paid || isExpired) {
+    throw new AppError('Menu currently unavailable due to inactive subscription.', 403);
+  }
+
   return {
     restaurant_name: cacheData.profile.restaurant_name,
     location: cacheData.profile.location,

@@ -60,5 +60,15 @@ async function refreshAccessToken(req, res, next) {
     next(error);
   }
 }
+async function submitPayment(req, res, next) {
+  try {
+    await restaurantService.submitPayment(req.restaurantId, req.body.paymentMessage);
+    res.status(200).json({
+      message: 'Payment verification submitted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken };
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken, submitPayment };

@@ -106,7 +106,16 @@ async function getFoodItemsByRestaurantName(restaurantName) {
     throw new AppError('Resource not found', 404);
   }
 
-  const { is_paid, subscription_expires_at } = cacheData.profile;
+  const profileRes = await pool.query(
+    'SELECT is_paid, subscription_expires_at FROM restaurants WHERE restaurant_name = $1',
+    [restaurantName]
+  );
+
+  if (profileRes.rowCount === 0) {
+    throw new AppError('Resource not found', 404);
+  }
+
+  const { is_paid, subscription_expires_at } = profileRes.rows[0];
   const isExpired = !subscription_expires_at || new Date(subscription_expires_at) < new Date();
   
   if (!is_paid || isExpired) {

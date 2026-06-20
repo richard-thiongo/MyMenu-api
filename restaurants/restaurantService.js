@@ -70,11 +70,17 @@ async function signin({ restaurant_name, password }) {
 }
 
 async function getProfile(restaurantId) {
-  const cacheData = await cacheService.getRestaurantCache(restaurantId);
-  if (!cacheData || !cacheData.profile) {
+  const res = await pool.query(
+    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at FROM restaurants WHERE restaurant_id = $1',
+    [restaurantId]
+  );
+  if (res.rowCount === 0) {
     throw new AppError('Resource not found', 404);
   }
-  return cacheData.profile;
+  
+  const profile = res.rows[0];
+  cacheService.updateProfile(restaurantId, profile);
+  return profile;
 }
 
 async function updateProfile(restaurantId, { primary_color }) {

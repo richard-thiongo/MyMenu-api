@@ -23,7 +23,7 @@ async function createFoodItem(restaurantId, data) {
      RETURNING food_id, food_name, price, description, img_url, category_name, restaurant_id`,
     [
       data.food_name,
-      data.price,
+      data.price ?? null,
       data.description || null,
       data.img_url || null,
       data.category_name,
@@ -58,7 +58,7 @@ async function updateFoodItem(restaurantId, foodId, data) {
      RETURNING food_id, food_name, price, description, img_url, category_name, restaurant_id`,
     [
       data.food_name,
-      data.price,
+      data.price ?? null,
       data.description || null,
       data.img_url || null,
       data.category_name,

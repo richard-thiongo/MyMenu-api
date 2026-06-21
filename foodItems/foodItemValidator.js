@@ -2,7 +2,10 @@ const Joi = require('joi');
 
 const createFoodItemSchema = Joi.object({
   food_name: Joi.string().trim().min(2).max(255).required(),
-  price: Joi.number().positive().precision(2).max(99999999.99).required(),
+  price: Joi.alternatives([
+    Joi.number().positive().precision(2).max(99999999.99),
+    Joi.valid(null)
+  ]).optional(),
   description: Joi.string().trim().max(2000).allow('', null).optional(),
   img_url: Joi.string().trim().uri().max(500).allow('', null).optional(),
   category_name: Joi.string().trim().min(2).max(255).required(),
@@ -10,7 +13,10 @@ const createFoodItemSchema = Joi.object({
 
 const updateFoodItemSchema = Joi.object({
   food_name: Joi.string().trim().min(2).max(255).required(),
-  price: Joi.number().positive().precision(2).max(99999999.99).required(),
+  price: Joi.alternatives([
+    Joi.number().positive().precision(2).max(99999999.99),
+    Joi.valid(null)
+  ]).optional(),
   description: Joi.string().trim().max(2000).allow('', null).optional(),
   img_url: Joi.string().trim().uri().max(500).allow('', null).optional(),
   category_name: Joi.string().trim().min(2).max(255).required(),

@@ -18,9 +18,9 @@ async function createFoodItem(restaurantId, data) {
   await verifyCategoryExists(restaurantId, data.category_name);
 
   const result = await pool.query(
-    `INSERT INTO food_items (food_name, price, description, img_url, category_name, restaurant_id)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING food_id, food_name, price, description, img_url, category_name, restaurant_id`,
+    `INSERT INTO food_items (food_name, price, description, img_url, category_name, restaurant_id, is_available)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING food_id, food_name, price, description, img_url, category_name, restaurant_id, is_available`,
     [
       data.food_name,
       data.price ?? null,
@@ -28,6 +28,7 @@ async function createFoodItem(restaurantId, data) {
       data.img_url || null,
       data.category_name,
       restaurantId,
+      data.is_available !== undefined ? data.is_available : true,
     ]
   );
 
@@ -53,15 +54,16 @@ async function updateFoodItem(restaurantId, foodId, data) {
 
   const result = await pool.query(
     `UPDATE food_items
-     SET food_name = $1, price = $2, description = $3, img_url = $4, category_name = $5
-     WHERE food_id = $6 AND restaurant_id = $7
-     RETURNING food_id, food_name, price, description, img_url, category_name, restaurant_id`,
+     SET food_name = $1, price = $2, description = $3, img_url = $4, category_name = $5, is_available = $6
+     WHERE food_id = $7 AND restaurant_id = $8
+     RETURNING food_id, food_name, price, description, img_url, category_name, restaurant_id, is_available`,
     [
       data.food_name,
       data.price ?? null,
       data.description || null,
       data.img_url || null,
       data.category_name,
+      data.is_available !== undefined ? data.is_available : true,
       foodId,
       restaurantId,
     ]
@@ -126,8 +128,10 @@ async function getFoodItemsByRestaurantName(restaurantName) {
     restaurant_name: cacheData.profile.restaurant_name,
     location: cacheData.profile.location,
     primary_color: cacheData.profile.primary_color,
+    orders_enabled: cacheData.profile.orders_enabled,
     categories: cacheData.categories,
-    food_items: cacheData.foodItems,
+    // Only serve items that are available (is_available is true or not set)
+    food_items: cacheData.foodItems.filter(item => item.is_available !== false),
   };
 }
 

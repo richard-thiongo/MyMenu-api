@@ -18,7 +18,7 @@ async function initCacheForRestaurant(restaurantId) {
 
   // 1. Fetch Profile
   const profileRes = await pool.query(
-    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at FROM restaurants WHERE restaurant_id = $1',
+    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants WHERE restaurant_id = $1',
     [restaurantId]
   );
   if (profileRes.rowCount === 0) return null; // Doesn't exist

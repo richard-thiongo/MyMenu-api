@@ -136,6 +136,15 @@ CLOUDINARY_API_SECRET=your_api_secret
 |--------|--------------|------|------------------------------------|
 | POST   | /api/upload  | Yes  | Upload an image; returns Cloudinary URL |
 
+### Orders
+
+| Method | Endpoint                          | Auth | Description                          |
+|--------|-----------------------------------|------|--------------------------------------|
+| POST   | /api/orders                       | No   | Create a new order for a restaurant  |
+| GET    | /api/orders/:id                   | No   | Get status and details of an order   |
+| GET    | /api/orders/restaurant/today      | Yes  | Get today's orders for the restaurant|
+| PUT    | /api/orders/:id/status            | Yes  | Update the status of an order        |
+
 ---
 
 ## Project Structure
@@ -151,6 +160,7 @@ mymenu-api/
 ├── restaurants/          # Restaurant auth and profile domain
 ├── categories/           # Category management domain
 ├── foodItems/            # Food item management domain
+├── orders/               # Orders management domain
 ├── upload/               # Image upload domain
 └── shared/               # Cross-cutting utilities and middleware
 ```
@@ -271,6 +281,22 @@ upload/
 │
 └── uploadController.js      # Receives the uploaded file processed by Multer/Cloudinary
                              #   and returns the secure Cloudinary URL to the frontend
+```
+
+---
+
+## orders/
+
+Handles the creation, retrieval, and status updates of customer orders.
+
+```
+orders/
+├── orderRoutes.js           # Declares 4 endpoints (2 public for customers, 2 protected
+│                            #   for restaurants to manage orders)
+│
+└── orderController.js       # Handles the HTTP layer for order creation, retrieving a 
+                             #   specific order, fetching today's orders for the 
+                             #   dashboard, and updating an order's status
 ```
 
 ---

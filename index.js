@@ -44,7 +44,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 10000, // requests per 15 minutes
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: 'Too many requests' },
@@ -80,7 +80,7 @@ async function startServer() {
     const io = new Server(server, {
       cors: corsOptions
     });
-    
+
     // Make io accessible in controllers
     app.set('io', io);
 
@@ -89,7 +89,7 @@ async function startServer() {
       socket.on('join_restaurant_room', (restaurantId) => {
         socket.join(`restaurant_${restaurantId}`);
       });
-      
+
       // Customer menu page joins this room to listen for status updates
       socket.on('join_order_room', (orderId) => {
         socket.join(`order_${orderId}`);

@@ -13,6 +13,9 @@ const orderRoutes = require('./orders/orderRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Enable 'trust proxy' for reverse proxies (Render, Cloudflare, Nginx)
+app.set('trust proxy', 1);
+
 // Configure CORS before Helmet so headers aren't overridden
 const corsOptions = {
   origin: function (origin, callback) {

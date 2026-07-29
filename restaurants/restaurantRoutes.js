@@ -2,7 +2,7 @@ const express = require('express');
 const restaurantController = require('./restaurantController');
 const validateRequest = require('../shared/validateRequest');
 const authMiddleware = require('../shared/authMiddleware');
-const { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema, refreshTokenSchema, paymentSchema } = require('./restaurantValidator');
+const { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema, forgotPasswordSchema, resetPasswordWithTokenSchema, refreshTokenSchema, paymentSchema } = require('./restaurantValidator');
 
 const router = express.Router();
 
@@ -30,6 +30,16 @@ router.post(
   '/reset-password',
   validateRequest(resetPasswordSchema),
   restaurantController.resetPassword
+);
+router.post(
+  '/forgot-password',
+  validateRequest(forgotPasswordSchema),
+  restaurantController.forgotPassword
+);
+router.post(
+  '/reset-password-token',
+  validateRequest(resetPasswordWithTokenSchema),
+  restaurantController.resetPasswordWithToken
 );
 router.post(
   '/refresh',

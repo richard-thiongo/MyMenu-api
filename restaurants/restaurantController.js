@@ -93,5 +93,24 @@ async function approvePayment(req, res, next) {
   }
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
+async function forgotPassword(req, res, next) {
+  try {
+    await restaurantService.forgotPassword(req.body);
+    // Always respond with 200 regardless — prevents email enumeration
+    res.status(200).json({ message: 'If that email is registered, a reset link has been sent.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resetPasswordWithToken(req, res, next) {
+  try {
+    await restaurantService.resetPasswordWithToken(req.body);
+    res.status(200).json({ message: 'Password reset successfully. You can now sign in.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
 

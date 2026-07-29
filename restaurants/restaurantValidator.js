@@ -2,6 +2,7 @@ const Joi = require('joi');
 
 const signupSchema = Joi.object({
   restaurant_name: Joi.string().trim().min(2).max(255).required(),
+  restaurant_email: Joi.string().trim().email().max(255).required(),
   location: Joi.string().trim().min(2).max(255).required(),
   password: Joi.string().min(8).max(128).required(),
   primary_color: Joi.string().trim().max(7).allow(null, '').optional(),
@@ -20,6 +21,13 @@ const resetPasswordSchema = Joi.object({
   restaurant_name: Joi.string().trim().min(2).max(255).required(),
   new_password: Joi.string().min(8).max(128).required(),
 });
+const forgotPasswordSchema = Joi.object({
+  restaurant_email: Joi.string().trim().email().required(),
+});
+const resetPasswordWithTokenSchema = Joi.object({
+  token: Joi.string().required(),
+  new_password: Joi.string().min(8).max(128).required(),
+});
 const refreshTokenSchema = Joi.object({
   refreshToken: Joi.string().required(),
 });
@@ -27,4 +35,4 @@ const paymentSchema = Joi.object({
   paymentMessage: Joi.string().trim().required(),
 });
 
-module.exports = { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema, refreshTokenSchema, paymentSchema };
+module.exports = { signupSchema, signinSchema, updateProfileSchema, resetPasswordSchema, forgotPasswordSchema, resetPasswordWithTokenSchema, refreshTokenSchema, paymentSchema };

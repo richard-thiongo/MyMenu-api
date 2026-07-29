@@ -4,7 +4,7 @@ const pool = require('../db');
 const AppError = require('../shared/AppError');
 const cacheService = require('../shared/cacheService');
 
-async function signup({ restaurant_name, location, password, primary_color }) {
+async function signup({ restaurant_name, restaurant_email, location, password, primary_color }) {
   const existing = await pool.query(
     'SELECT 1 FROM restaurants WHERE restaurant_name = $1',
     [restaurant_name]
@@ -17,10 +17,10 @@ async function signup({ restaurant_name, location, password, primary_color }) {
   const hashedPassword = await bcrypt.hash(password, 12);
 
   const result = await pool.query(
-    `INSERT INTO restaurants (restaurant_name, location, password, primary_color, is_paid)
-     VALUES ($1, $2, $3, $4, false)
-     RETURNING restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled`,
-    [restaurant_name, location, hashedPassword, primary_color]
+    `INSERT INTO restaurants (restaurant_name, restaurant_email, location, password, primary_color, is_paid)
+     VALUES ($1, $2, $3, $4, $5, false)
+     RETURNING restaurant_id, restaurant_name, restaurant_email, location, primary_color, is_paid, subscription_expires_at, orders_enabled`,
+    [restaurant_name, restaurant_email, location, hashedPassword, primary_color]
   );
 
   return result.rows[0];
@@ -72,7 +72,7 @@ async function signin({ restaurant_name, password }) {
 
 async function getProfile(restaurantId) {
   const res = await pool.query(
-    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants WHERE restaurant_id = $1',
+    'SELECT restaurant_id, restaurant_name, restaurant_email, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants WHERE restaurant_id = $1',
     [restaurantId]
   );
   if (res.rowCount === 0) {
@@ -107,6 +107,73 @@ async function resetPassword({ restaurant_name, new_password }) {
     'UPDATE restaurants SET password = $1 WHERE restaurant_name = $2 RETURNING restaurant_id',
     [hashedPassword, restaurant_name]
   );
+  if (result.rowCount === 0) {
+    throw new AppError('Restaurant not found', 404);
+  }
+}
+
+async function forgotPassword({ restaurant_email }) {
+  const result = await pool.query(
+    'SELECT restaurant_id, restaurant_name, restaurant_email FROM restaurants WHERE restaurant_email = $1',
+    [restaurant_email]
+  );
+
+  // Always respond with success to prevent email enumeration attacks
+  if (result.rowCount === 0) return;
+
+  const restaurant = result.rows[0];
+
+  // Generate a short-lived signed token (1 hour)
+  const resetToken = jwt.sign(
+    { restaurantId: restaurant.restaurant_id, purpose: 'password_reset' },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  await resend.emails.send({
+    from: 'Kenyan.menu <onboarding@resend.dev>',
+    to: restaurant.restaurant_email,
+    subject: '🔑 Reset your Kenyan.menu password',
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9; border-radius: 12px;">
+        <h2 style="color: #333; margin-bottom: 8px;">Password Reset Request</h2>
+        <p style="color: #555;">Hi <strong>${restaurant.restaurant_name}</strong>,</p>
+        <p style="color: #555;">We received a request to reset your password. Click the button below to choose a new one. This link expires in <strong>1 hour</strong>.</p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${resetUrl}" style="background: #6366f1; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: bold;">
+            Reset Password
+          </a>
+        </div>
+        <p style="color: #999; font-size: 13px;">If you didn't request this, you can safely ignore this email. Your password won't change.</p>
+        <p style="color: #bbb; font-size: 11px; margin-top: 24px;">This link expires in 1 hour.</p>
+      </div>
+    `
+  });
+}
+
+async function resetPasswordWithToken({ token, new_password }) {
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    throw new AppError('Reset link is invalid or has expired', 400);
+  }
+
+  if (payload.purpose !== 'password_reset') {
+    throw new AppError('Invalid reset token', 400);
+  }
+
+  const hashedPassword = await bcrypt.hash(new_password, 12);
+  const result = await pool.query(
+    'UPDATE restaurants SET password = $1 WHERE restaurant_id = $2 RETURNING restaurant_id',
+    [hashedPassword, payload.restaurantId]
+  );
+
   if (result.rowCount === 0) {
     throw new AppError('Restaurant not found', 404);
   }
@@ -234,5 +301,5 @@ async function approvePayment(token) {
   return result.rows[0];
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
 

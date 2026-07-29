@@ -35,6 +35,7 @@ The API is organized by feature domain. Each domain has its own folder containin
 - Image uploads stored to Cloudinary via Multer
 - Joi-based request validation on all inputs
 - Rate limiting (100 requests / 15 min per IP)
+- Secure password resets via email using the Resend API and short-lived JWT tokens
 - Helmet for security headers
 - Graceful shutdown on SIGINT/SIGTERM
 
@@ -51,6 +52,7 @@ The API is organized by feature domain. Each domain has its own folder containin
 | Hashing       | bcryptjs                  |
 | Validation    | Joi                       |
 | Image Storage | Cloudinary + Multer       |
+| Email         | Resend API                |
 | Security      | Helmet, express-rate-limit|
 
 ---
@@ -95,6 +97,8 @@ JWT_SECRET=your_super_secret_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+
+RESEND_API_KEY=your_resend_api_key
 ```
 
 ---
@@ -105,11 +109,12 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 | Method | Endpoint                          | Auth | Description                          |
 |--------|-----------------------------------|------|--------------------------------------|
-| POST   | /api/restaurants/signup           | No   | Register a new restaurant            |
+| POST   | /api/restaurants/signup           | No   | Register a new restaurant (requires email) |
 | POST   | /api/restaurants/signin           | No   | Sign in, returns JWT token           |
 | GET    | /api/restaurants/profile          | Yes  | Get the authenticated restaurant's profile |
 | PUT    | /api/restaurants/profile          | Yes  | Update brand color                   |
-| POST   | /api/restaurants/reset-password   | No   | Reset password by restaurant name    |
+| POST   | /api/restaurants/forgot-password  | No   | Triggers a password reset email via Resend |
+| POST   | /api/restaurants/reset-password-token | No | Resets password using the emailed token |
 
 ### Categories
 

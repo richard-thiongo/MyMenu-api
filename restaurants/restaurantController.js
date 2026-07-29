@@ -1,7 +1,17 @@
 const restaurantService = require('./restaurantService');
+const emailValidator = require('deep-email-validator');
+const AppError = require('../shared/AppError');
 
 async function signup(req, res, next) {
   try {
+    const { valid, reason, validators } = await emailValidator.validate(req.body.restaurant_email);
+    if (!valid) {
+      const errorMessage = validators[reason] && validators[reason].reason
+        ? `Invalid email address: ${validators[reason].reason}`
+        : 'Please provide a valid and real email address.';
+      throw new AppError(errorMessage, 400);
+    }
+
     const restaurant = await restaurantService.signup(req.body);
     res.status(201).json({
       message: 'Registration successful',

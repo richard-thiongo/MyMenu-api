@@ -78,7 +78,7 @@ async function getProfile(restaurantId) {
   if (res.rowCount === 0) {
     throw new AppError('Resource not found', 404);
   }
-  
+
   const profile = res.rows[0];
   cacheService.updateProfile(restaurantId, profile);
   return profile;
@@ -98,7 +98,7 @@ async function updateProfile(restaurantId, { primary_color, orders_enabled }) {
   }
   const updatedProfile = result.rows[0];
   cacheService.updateProfile(restaurantId, updatedProfile);
-  
+
   return updatedProfile;
 }
 async function resetPassword({ restaurant_name, new_password }) {
@@ -184,29 +184,29 @@ async function refreshAccessToken(refreshTokenStr) {
       refreshTokenStr,
       process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh'
     );
-    
+
     const restaurantId = payload.restaurantId;
     const result = await pool.query(
       'SELECT restaurant_id FROM restaurants WHERE restaurant_id = $1',
       [restaurantId]
     );
-    
+
     if (result.rowCount === 0) {
       throw new AppError('Invalid token', 401);
     }
-    
+
     const newToken = jwt.sign(
       { restaurantId },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
-    
+
     const newRefreshToken = jwt.sign(
       { restaurantId },
       process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh',
       { expiresIn: '7d' }
     );
-    
+
     return { token: newToken, refreshToken: newRefreshToken };
   } catch (err) {
     throw new AppError('Invalid or expired refresh token', 401);
@@ -215,7 +215,7 @@ async function refreshAccessToken(refreshTokenStr) {
 
 async function submitPayment(restaurantId, paymentMessage) {
   const profile = await getProfile(restaurantId);
-  
+
   if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) {
     throw new AppError('Email service is not configured properly', 500);
   }
@@ -234,7 +234,7 @@ async function submitPayment(restaurantId, paymentMessage) {
 
   try {
     await resend.emails.send({
-      from: 'MyMenu <onboarding@resend.dev>',
+      from: 'KenyanMenu <onboarding@resend.dev>',
       to: process.env.ADMIN_EMAIL,
       subject: `💳 Payment Verification: ${profile.restaurant_name}`,
       html: `
@@ -248,7 +248,7 @@ async function submitPayment(restaurantId, paymentMessage) {
           <pre style="background: #e8e8e8; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-break: break-all;">${paymentMessage}</pre>
           <div style="text-align: center; margin-top: 30px;">
             <a href="${approvalUrl}" style="background: #16a34a; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: bold;">
-              ✅ Review &amp; Approve Payment
+              Review &amp; Approve Payment
             </a>
           </div>
           <p style="color: #999; font-size: 12px; margin-top: 20px; text-align: center;">This link expires in 7 days.</p>

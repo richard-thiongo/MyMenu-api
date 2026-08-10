@@ -9,7 +9,7 @@ const restaurantRoutes = require('./restaurants/restaurantRoutes');
 const categoryRoutes = require('./categories/categoryRoutes');
 const foodItemRoutes = require('./foodItems/foodItemRoutes');
 const uploadRoutes = require('./upload/uploadRoutes');
-const orderRoutes = require('./orders/orderRoutes');
+// const orderRoutes = require('./orders/orderRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -59,7 +59,7 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/food-items', foodItemRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/orders', orderRoutes);
+// app.use('/api/orders', orderRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: 'Resource not found' });
 });

@@ -4,7 +4,14 @@ const AppError = require('../shared/AppError');
 
 async function signup(req, res, next) {
   try {
-    const { valid, reason, validators } = await emailValidator.validate(req.body.restaurant_email);
+    const { valid, reason, validators } = await emailValidator.validate({
+      email: req.body.restaurant_email,
+      validateRegex: true,
+      validateMx: false,
+      validateTypo: true,
+      validateDisposable: true,
+      validateSMTP: false,
+    });
     if (!valid) {
       const errorMessage = validators[reason] && validators[reason].reason
         ? `Invalid email address: ${validators[reason].reason}`

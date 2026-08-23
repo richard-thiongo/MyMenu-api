@@ -69,10 +69,23 @@ async function getFoodItemsByRestaurantName(req, res, next) {
   }
 }
 
+async function getPublicFoodItems(req, res, next) {
+  try {
+    const foodItems = await foodItemService.getFoodItems(req.params.restaurantId);
+    res.status(200).json({
+      message: 'Public food items retrieved',
+      data: foodItems,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createFoodItem,
   updateFoodItem,
   deleteFoodItem,
   getFoodItems,
   getFoodItemsByRestaurantName,
+  getPublicFoodItems,
 };

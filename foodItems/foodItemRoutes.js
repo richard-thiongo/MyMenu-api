@@ -17,6 +17,8 @@ router.get(
   foodItemController.getFoodItemsByRestaurantName
 );
 
+router.get('/public/:restaurantId', foodItemController.getPublicFoodItems);
+
 router.use(authMiddleware);
 
 router.get('/', foodItemController.getFoodItems);

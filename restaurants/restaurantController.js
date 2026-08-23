@@ -129,5 +129,23 @@ async function resetPasswordWithToken(req, res, next) {
   }
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
+async function getPublicRestaurants(req, res, next) {
+  try {
+    const restaurants = await restaurantService.getPublicRestaurants();
+    res.status(200).json({ message: 'Public restaurants retrieved', data: restaurants });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getPublicProfile(req, res, next) {
+  try {
+    const profile = await restaurantService.getPublicProfile(req.params.id);
+    res.status(200).json({ message: 'Public profile retrieved', data: profile });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment, getPublicRestaurants, getPublicProfile };
 

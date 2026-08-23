@@ -301,5 +301,23 @@ async function approvePayment(token) {
   return result.rows[0];
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment };
+async function getPublicRestaurants() {
+  const result = await pool.query(
+    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants'
+  );
+  return result.rows;
+}
+
+async function getPublicProfile(restaurantId) {
+  const res = await pool.query(
+    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants WHERE restaurant_id = $1',
+    [restaurantId]
+  );
+  if (res.rowCount === 0) {
+    throw new AppError('Restaurant not found', 404);
+  }
+  return res.rows[0];
+}
+
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment, getPublicRestaurants, getPublicProfile };
 

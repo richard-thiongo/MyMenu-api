@@ -57,4 +57,16 @@ async function deleteCategory(req, res, next) {
   }
 }
 
-module.exports = { getCategories, createCategory, updateCategory, deleteCategory };
+async function getPublicCategories(req, res, next) {
+  try {
+    const categories = await categoryService.getCategories(req.params.restaurantId);
+    res.status(200).json({
+      message: 'Public categories retrieved',
+      data: categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { getCategories, createCategory, updateCategory, deleteCategory, getPublicCategories };

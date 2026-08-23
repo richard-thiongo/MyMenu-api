@@ -53,6 +53,10 @@ router.post(
   restaurantController.submitPayment
 );
 
+// Public routes
+router.get('/public/all', restaurantController.getPublicRestaurants);
+router.get('/public/:id', restaurantController.getPublicProfile);
+
 // Admin routes (secured by the signed token itself — no auth middleware needed)
 router.get('/admin/payment-details', restaurantController.getPaymentDetails);
 router.post('/admin/approve-payment', restaurantController.approvePayment);

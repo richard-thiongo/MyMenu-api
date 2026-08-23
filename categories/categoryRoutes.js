@@ -10,6 +10,8 @@ const {
 
 const router = express.Router();
 
+router.get('/public/:restaurantId', categoryController.getPublicCategories);
+
 router.use(authMiddleware);
 
 router.get('/', categoryController.getCategories);

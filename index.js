@@ -3,6 +3,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 const pool = require('./db');
 const errorHandler = require('./shared/errorHandler');
 const restaurantRoutes = require('./restaurants/restaurantRoutes');
@@ -60,6 +61,13 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/food-items', foodItemRoutes);
 app.use('/api/upload', uploadRoutes);
 // app.use('/api/orders', orderRoutes);
+
+app.get('/api/ping', (req, res) => {
+  // Generate a 30-character pseudo-uuid (15 bytes = 30 hex characters)
+  const uuid = crypto.randomBytes(15).toString('hex');
+  res.status(200).json({ uuid });
+});
+
 app.use((req, res) => {
   res.status(404).json({ message: 'Resource not found' });
 });

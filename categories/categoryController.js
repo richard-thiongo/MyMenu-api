@@ -18,7 +18,7 @@ async function createCategory(req, res, next) {
       req.restaurantId,
       req.body.category_name,
       req.body.image_url
-    );
+     );
     res.status(201).json({
       message: 'Category created',
       data: category,

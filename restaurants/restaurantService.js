@@ -216,18 +216,32 @@ async function refreshAccessToken(refreshTokenStr) {
 async function submitPayment(restaurantId, paymentMessage) {
   const profile = await getProfile(restaurantId);
 
-  if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) {
-    throw new AppError('Email service is not configured properly', 500);
+  // Set the subscription to active by default as requested
+  const result = await pool.query(
+    `UPDATE restaurants
+     SET is_paid = true, subscription_expires_at = NOW() + INTERVAL '31 days'
+     WHERE restaurant_id = $1
+     RETURNING restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled`,
+    [restaurantId]
+  );
+  
+  if (result.rowCount > 0) {
+    cacheService.updateProfile(restaurantId, result.rows[0]);
   }
 
-  // Generate a secure, signed admin approval token (expires in 7 days)
+  if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) {
+    // If no email configured, we still activated the user, but we just return early
+    return result.rows[0];
+  }
+
+  // Generate a secure, signed admin reject token (expires in 7 days)
   const adminToken = jwt.sign(
     { restaurantId, restaurantName: profile.restaurant_name, paymentMessage },
     process.env.ADMIN_SECRET,
     { expiresIn: '7d' }
   );
 
-  const approvalUrl = `${process.env.FRONTEND_URL}/admin/verify?token=${adminToken}`;
+  const rejectUrl = `${process.env.FRONTEND_URL}/admin/verify?token=${adminToken}`;
 
   const { Resend } = require('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -247,8 +261,8 @@ async function submitPayment(restaurantId, paymentMessage) {
           <h3 style="color: #333;">Payment Message / Code:</h3>
           <pre style="background: #e8e8e8; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-break: break-all;">${paymentMessage}</pre>
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${approvalUrl}" style="background: #16a34a; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: bold;">
-              Review &amp; Approve Payment
+            <a href="${rejectUrl}" style="background: #dc2626; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: bold;">
+              Reject Payment
             </a>
           </div>
           <p style="color: #999; font-size: 12px; margin-top: 20px; text-align: center;">This link expires in 7 days.</p>
@@ -256,8 +270,10 @@ async function submitPayment(restaurantId, paymentMessage) {
       `
     });
   } catch (error) {
-    throw new AppError('Failed to send payment verification email', 500);
+    console.error('Failed to send payment verification email', error);
   }
+  
+  return result.rows[0];
 }
 
 async function getPaymentDetails(token) {
@@ -273,19 +289,19 @@ async function getPaymentDetails(token) {
   }
 }
 
-async function approvePayment(token) {
+async function rejectPayment(token) {
   let payload;
   try {
     payload = jwt.verify(token, process.env.ADMIN_SECRET);
   } catch (err) {
-    throw new AppError('Invalid or expired approval link', 401);
+    throw new AppError('Invalid or expired link', 401);
   }
 
-  const { restaurantId, restaurantName } = payload;
+  const { restaurantId } = payload;
 
   const result = await pool.query(
     `UPDATE restaurants
-     SET is_paid = true, subscription_expires_at = NOW() + INTERVAL '31 days'
+     SET is_paid = false, subscription_expires_at = NULL
      WHERE restaurant_id = $1
      RETURNING restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled`,
     [restaurantId]
@@ -295,7 +311,7 @@ async function approvePayment(token) {
     throw new AppError('Restaurant not found', 404);
   }
 
-  // Immediately update the cache so the public menu goes live instantly
+  // Update the cache so the public menu goes down
   cacheService.updateProfile(restaurantId, result.rows[0]);
 
   return result.rows[0];
@@ -319,5 +335,5 @@ async function getPublicProfile(restaurantId) {
   return res.rows[0];
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment, getPublicRestaurants, getPublicProfile };
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, rejectPayment, getPublicRestaurants, getPublicProfile };
 

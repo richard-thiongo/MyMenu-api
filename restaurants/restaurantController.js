@@ -79,9 +79,10 @@ async function refreshAccessToken(req, res, next) {
 }
 async function submitPayment(req, res, next) {
   try {
-    await restaurantService.submitPayment(req.restaurantId, req.body.paymentMessage);
+    const updatedProfile = await restaurantService.submitPayment(req.restaurantId, req.body.paymentMessage);
     res.status(200).json({
-      message: 'Payment verification submitted successfully'
+      message: 'Payment verification submitted successfully',
+      data: updatedProfile
     });
   } catch (error) {
     next(error);
@@ -99,12 +100,13 @@ async function getPaymentDetails(req, res, next) {
   }
 }
 
-async function approvePayment(req, res, next) {
+async function rejectPayment(req, res, next) {
   try {
-    const { token } = req.body;
-    if (!token) throw new (require('../shared/AppError'))('Token is required', 400);
-    const restaurant = await restaurantService.approvePayment(token);
-    res.status(200).json({ message: 'Payment approved and subscription activated!', data: restaurant });
+    const result = await restaurantService.rejectPayment(req.body.token);
+    res.status(200).json({
+      message: 'Payment rejected successfully',
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
@@ -147,5 +149,4 @@ async function getPublicProfile(req, res, next) {
   }
 }
 
-module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, approvePayment, getPublicRestaurants, getPublicProfile };
-
+module.exports = { signup, signin, getProfile, updateProfile, resetPassword, forgotPassword, resetPasswordWithToken, refreshAccessToken, submitPayment, getPaymentDetails, rejectPayment, getPublicRestaurants, getPublicProfile };

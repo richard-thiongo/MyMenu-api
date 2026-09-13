@@ -129,6 +129,7 @@ async function getFoodItemsByRestaurantName(restaurantName) {
     location: cacheData.profile.location,
     primary_color: cacheData.profile.primary_color,
     orders_enabled: cacheData.profile.orders_enabled,
+    whatsappnumber: cacheData.profile.whatsappnumber,
     categories: cacheData.categories,
     // Only serve items that are available (is_available is true or not set)
     food_items: cacheData.foodItems.filter(item => item.is_available !== false),

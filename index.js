@@ -1,5 +1,4 @@
 const express = require('express');
-const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -10,7 +9,6 @@ const restaurantRoutes = require('./restaurants/restaurantRoutes');
 const categoryRoutes = require('./categories/categoryRoutes');
 const foodItemRoutes = require('./foodItems/foodItemRoutes');
 const uploadRoutes = require('./upload/uploadRoutes');
-// const orderRoutes = require('./orders/orderRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -60,7 +58,6 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/food-items', foodItemRoutes);
 app.use('/api/upload', uploadRoutes);
-// app.use('/api/orders', orderRoutes);
 
 app.get('/api/ping', (req, res) => {
   // Generate a 30-character pseudo-uuid (15 bytes = 30 hex characters)
@@ -83,25 +80,6 @@ async function startServer() {
 
     server = app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
-    });
-
-    const io = new Server(server, {
-      cors: corsOptions
-    });
-
-    // Make io accessible in controllers
-    app.set('io', io);
-
-    io.on('connection', (socket) => {
-      // Restaurant dashboard joins this room to listen for new orders
-      socket.on('join_restaurant_room', (restaurantId) => {
-        socket.join(`restaurant_${restaurantId}`);
-      });
-
-      // Customer menu page joins this room to listen for status updates
-      socket.on('join_order_room', (orderId) => {
-        socket.join(`order_${orderId}`);
-      });
     });
 
     server.on('error', (error) => {

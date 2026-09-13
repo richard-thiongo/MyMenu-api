@@ -28,7 +28,7 @@ async function signup({ restaurant_name, restaurant_email, location, password, p
 
 async function signin({ restaurant_name, password }) {
   const result = await pool.query(
-    'SELECT restaurant_id, restaurant_name, location, password, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants WHERE restaurant_name = $1',
+    'SELECT restaurant_id, restaurant_name, location, password, primary_color, is_paid, subscription_expires_at, orders_enabled, whatsappnumber FROM restaurants WHERE restaurant_name = $1',
     [restaurant_name]
   );
 
@@ -66,13 +66,14 @@ async function signin({ restaurant_name, password }) {
       is_paid: restaurant.is_paid,
       subscription_expires_at: restaurant.subscription_expires_at,
       orders_enabled: restaurant.orders_enabled,
+      whatsappnumber: restaurant.whatsappnumber,
     },
   };
 }
 
 async function getProfile(restaurantId) {
   const res = await pool.query(
-    'SELECT restaurant_id, restaurant_name, restaurant_email, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants WHERE restaurant_id = $1',
+    'SELECT restaurant_id, restaurant_name, restaurant_email, location, primary_color, is_paid, subscription_expires_at, orders_enabled, whatsappnumber FROM restaurants WHERE restaurant_id = $1',
     [restaurantId]
   );
   if (res.rowCount === 0) {
@@ -84,14 +85,15 @@ async function getProfile(restaurantId) {
   return profile;
 }
 
-async function updateProfile(restaurantId, { primary_color, orders_enabled }) {
+async function updateProfile(restaurantId, { primary_color, orders_enabled, whatsappnumber }) {
   const result = await pool.query(
     `UPDATE restaurants
      SET primary_color = COALESCE($1, primary_color),
-         orders_enabled = COALESCE($2, orders_enabled)
-     WHERE restaurant_id = $3
-     RETURNING restaurant_id, restaurant_name, location, primary_color, orders_enabled`,
-    [primary_color !== undefined ? primary_color : null, orders_enabled !== undefined ? orders_enabled : null, restaurantId]
+         orders_enabled = COALESCE($2, orders_enabled),
+         whatsappnumber = COALESCE($3, whatsappnumber)
+     WHERE restaurant_id = $4
+     RETURNING restaurant_id, restaurant_name, location, primary_color, orders_enabled, whatsappnumber`,
+    [primary_color !== undefined ? primary_color : null, orders_enabled !== undefined ? orders_enabled : null, whatsappnumber !== undefined ? whatsappnumber : null, restaurantId]
   );
   if (result.rowCount === 0) {
     throw new AppError('Resource not found', 404);
@@ -136,9 +138,9 @@ async function forgotPassword({ restaurant_email }) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   await resend.emails.send({
-    from: 'Kenyan.menu <onboarding@resend.dev>',
+    from: 'OurMenu.Click <onboarding@resend.dev>',
     to: restaurant.restaurant_email,
-    subject: '🔑 Reset your Kenyan.menu password',
+    subject: '🔑 Reset your OurMenu.Click password',
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9; border-radius: 12px;">
         <h2 style="color: #333; margin-bottom: 8px;">Password Reset Request</h2>
@@ -224,7 +226,7 @@ async function submitPayment(restaurantId, paymentMessage) {
      RETURNING restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled`,
     [restaurantId]
   );
-  
+
   if (result.rowCount > 0) {
     cacheService.updateProfile(restaurantId, result.rows[0]);
   }
@@ -272,7 +274,7 @@ async function submitPayment(restaurantId, paymentMessage) {
   } catch (error) {
     console.error('Failed to send payment verification email', error);
   }
-  
+
   return result.rows[0];
 }
 
@@ -319,14 +321,14 @@ async function rejectPayment(token) {
 
 async function getPublicRestaurants() {
   const result = await pool.query(
-    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants'
+    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled, whatsappnumber FROM restaurants'
   );
   return result.rows;
 }
 
 async function getPublicProfile(restaurantId) {
   const res = await pool.query(
-    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled FROM restaurants WHERE restaurant_id = $1',
+    'SELECT restaurant_id, restaurant_name, location, primary_color, is_paid, subscription_expires_at, orders_enabled, whatsappnumber FROM restaurants WHERE restaurant_id = $1',
     [restaurantId]
   );
   if (res.rowCount === 0) {

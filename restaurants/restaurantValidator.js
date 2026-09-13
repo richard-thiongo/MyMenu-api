@@ -16,6 +16,7 @@ const signinSchema = Joi.object({
 const updateProfileSchema = Joi.object({
   primary_color: Joi.string().trim().length(7).pattern(/^#[0-9a-fA-F]{6}$/).optional(),
   orders_enabled: Joi.boolean().optional(),
+  whatsappnumber: Joi.string().trim().allow(null, '').optional(),
 }).min(1);
 const resetPasswordSchema = Joi.object({
   restaurant_name: Joi.string().trim().min(2).max(255).required(),

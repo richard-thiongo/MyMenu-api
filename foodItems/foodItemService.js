@@ -109,7 +109,7 @@ async function getFoodItemsByRestaurantName(restaurantName) {
   }
 
   const profileRes = await pool.query(
-    'SELECT is_paid, subscription_expires_at FROM restaurants WHERE restaurant_name = $1',
+    'SELECT is_paid, subscription_expires_at FROM restaurants WHERE username = $1',
     [restaurantName]
   );
 

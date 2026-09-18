@@ -2,6 +2,7 @@ const Joi = require('joi');
 
 const signupSchema = Joi.object({
   restaurant_name: Joi.string().trim().min(2).max(255).required(),
+  username: Joi.string().trim().min(2).max(255).required(),
   restaurant_email: Joi.string().trim().email().max(255).required(),
   location: Joi.string().trim().min(2).max(255).required(),
   password: Joi.string().min(8).max(128).required(),

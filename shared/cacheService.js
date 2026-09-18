@@ -6,9 +6,9 @@ const pool = require('../db');
 const cache = new Map();
 
 // Lookup map for public URLs
-// Key: restaurantName
+// Key: username
 // Value: restaurantId
-const nameToIdMap = new Map();
+const usernameToIdMap = new Map();
 
 /**
  * Initializes the cache for a specific restaurant by querying the database.
@@ -18,7 +18,7 @@ async function initCacheForRestaurant(restaurantId) {
 
   // 1. Fetch Profile
   const profileRes = await pool.query(
-    'SELECT restaurant_id, restaurant_name, restaurant_email, location, primary_color, is_paid, subscription_expires_at, orders_enabled, whatsappnumber FROM restaurants WHERE restaurant_id = $1',
+    'SELECT restaurant_id, restaurant_name, username, restaurant_email, location, primary_color, is_paid, subscription_expires_at, orders_enabled, whatsappnumber FROM restaurants WHERE restaurant_id = $1',
     [restaurantId]
   );
   if (profileRes.rowCount === 0) return null; // Doesn't exist
@@ -46,7 +46,7 @@ async function initCacheForRestaurant(restaurantId) {
   });
   
   // Set Lookup Map
-  nameToIdMap.set(profile.restaurant_name, restaurantId);
+  usernameToIdMap.set(profile.username, restaurantId);
 }
 
 /**
@@ -60,17 +60,17 @@ async function getRestaurantCache(restaurantId) {
 }
 
 /**
- * Get the full cached data using the restaurant's public name. Initializes if empty.
+ * Get the full cached data using the restaurant's username. Initializes if empty.
  */
-async function getCacheByName(restaurantName) {
-  if (nameToIdMap.has(restaurantName)) {
-    const id = nameToIdMap.get(restaurantName);
+async function getCacheByName(username) {
+  if (usernameToIdMap.has(username)) {
+    const id = usernameToIdMap.get(username);
     return getRestaurantCache(id);
   } else {
     // If not in the lookup map, we must query the DB to find the ID.
     const res = await pool.query(
-      'SELECT restaurant_id FROM restaurants WHERE restaurant_name = $1',
-      [restaurantName]
+      'SELECT restaurant_id FROM restaurants WHERE username = $1',
+      [username]
     );
     if (res.rowCount === 0) return null;
     
@@ -86,10 +86,10 @@ async function getCacheByName(restaurantName) {
 function updateProfile(restaurantId, updatedProfile) {
   const data = cache.get(restaurantId);
   if (data) {
-    // Update the lookup map if the name was changed
-    if (data.profile.restaurant_name !== updatedProfile.restaurant_name) {
-      nameToIdMap.delete(data.profile.restaurant_name);
-      nameToIdMap.set(updatedProfile.restaurant_name, restaurantId);
+    // Update the lookup map if the username was changed
+    if (data.profile.username !== updatedProfile.username) {
+      usernameToIdMap.delete(data.profile.username);
+      usernameToIdMap.set(updatedProfile.username, restaurantId);
     }
     data.profile = updatedProfile;
   }
